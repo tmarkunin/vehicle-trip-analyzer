@@ -1,7 +1,7 @@
 FROM nginx:alpine
 
 RUN apk update
-RUN apk add --no-cache curl bash py3-pip mc
+RUN apk add --no-cache curl py3-pip
 RUN apk add tzdata
 
 # Set Europe/Moscow as local timezone
