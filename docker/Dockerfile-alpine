@@ -1,7 +1,7 @@
-FROM nginx
+FROM nginx:alpine
 
-RUN apt update
-RUN apt install -y python3-pip
+RUN apk update
+RUN apk add --no-cache py3-pip
 
 ENV PATH=bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 COPY app /app
