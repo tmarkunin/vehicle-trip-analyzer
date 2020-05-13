@@ -1,7 +1,7 @@
 /git/*
 reated by https://www.gitignore.io/api/java,macos,jetbrains,terraform
 
-# lock files
+# lock
 *.lock
 
 # python compiled bytecode
@@ -31,6 +31,7 @@ reated by https://www.gitignore.io/api/java,macos,jetbrains,terraform
 *.zip
 *.tar.gz
 *.rar
+*.tgz
 
 *.swp
 *.save
