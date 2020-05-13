@@ -1,6 +1,9 @@
 /git/*
 reated by https://www.gitignore.io/api/java,macos,jetbrains,terraform
 
+# lock files
+*.lock
+
 # python compiled bytecode
 *.pyc
 

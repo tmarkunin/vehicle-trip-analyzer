@@ -19,12 +19,12 @@ pgen() {
 }
 
 conf() {
+  RELEASE_DIR=$(pwd)
   DIR=$(dirname $0)
   cd $DIR
   BINDIR=$(pwd)
   [ -z "$PROJECT_NAME" ] && errargx "PROJECT_NAME not defined"
   [ -z "$RELEASE" ] && RELEASE=$PROJECT_NAME
-  RELEASE_DIR=../helm/$RELEASE
   cd $RELEASE_DIR || errx "Can not cd to RELEASE_DIR: $RELEASE_DIR"
   [ -z "$CLUSTER" ] && errargx "CLUSTER environment variable not set (example: prod/nonprod)"
   [ -z "$NAMESPACE" ] && NAMESPACE=default
@@ -75,7 +75,6 @@ clean() {
 
 conf
 set -e
-read_vault
 rollout
 rollback
 clean
