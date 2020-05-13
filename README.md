@@ -48,3 +48,4 @@ $ curl -i -H "Content-Type: application/json" -X POST -d '{"vin":"WDD1671591Z000
 PROJECT_NAME=jenkins CLUSTER=nonprod NAMESPACE=default RELEASE=jenkins TEMPLATE=nonprod.yaml.j2 JENKINS_ADMIN_PASSWORD=xxx GITLAB_API_TOKEN=xxx sh -x files/jobs/rollout.sh
 ```
 After jenkins is installer you can login as admin and run job -> rolloutProject
+
