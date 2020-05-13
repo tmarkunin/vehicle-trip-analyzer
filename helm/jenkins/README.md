@@ -7,5 +7,5 @@ PROJECT_NAME=jenkins CLUSTER=nonprod NAMESPACE=default RELEASE=jenkins TEMPLATE=
 
 ### Delete
 ```bash
-$ helm del --purge vehicle-trip-analyzer.<NAMESPACE>
+$ helm del --purge jenkins
 ```

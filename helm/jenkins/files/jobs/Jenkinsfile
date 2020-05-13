@@ -2,6 +2,10 @@ pipeline {
     agent none
     environment {
         GIT_SSL_NO_VERIFY = 'true'
+        PROJECT_NAME = 'vehicle-trip-analyzer'
+        RELEASE = "$PROJECT_NAME"
+        NAMESPACE = 'default'
+        CLUSTER = 'nonprod'
         APP_VERSION = "1.0.$BUILD_NUMBER"
     }
     triggers { pollSCM('* * * * *') }
