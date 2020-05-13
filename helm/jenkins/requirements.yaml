@@ -1,0 +1,7 @@
+dependencies:
+- name: jenkins
+  repository: '@stable'
+  version: 1.9.16
+- name: vehicle-trip-analyzer
+  repository: "file://../vehicle-trip-analyzer"
+  version: 1.0.0

@@ -1,0 +1,239 @@
+jenkins:
+  nameOverride: jenkins
+  fullnameOverride: jenkins
+  master:
+    numExecutors: 10
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    javaOpts: "-Dorg.apache.commons.jelly.tags.fmt.timeZone=Europe/Moscow"
+    jenkinsAdminEmail: "jenkins@localhost"
+    ingress:
+      enabled: true
+      labels:
+        app: jenkins
+      apiVersion: "extensions/v1beta1"
+      annotations:
+        certmanager.k8s.io/cluster-issuer: letsencrypt-prod
+        kubernetes.io/ingress.class: nginx
+        nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  
+      hostName: jenkins.paraselenae.com
+      tls:
+        - secretName: jenkins-tls
+          hosts:
+            - jenkins.paraselenae.com
+      #path: "/jenkins"
+    cli: true
+    adminPassword: {{ JENKINS_ADMIN_PASSWORD }}
+    installPlugins:
+      - kubernetes
+      - configuration-as-code
+      - workflow-multibranch-defaults
+      - jira
+      - build-blocker-plugin
+      - gitlab-plugin
+      - workflow-aggregator
+      - matrix-auth
+      - authorize-project
+      - durable-task
+      - folder-auth
+      - folder-properties
+      - strict-crumb-issuer
+
+    overwritePlugins: true
+    jobs:
+      rolloutProject: |-
+        <?xml version='1.1' encoding='UTF-8'?>
+        <flow-definition plugin="workflow-job@2.36">
+          <actions>
+            <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobAction plugin="pipeline-model-definition@1.5.0"/>
+            <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction plugin="pipeline-model-definition@1.5.0">
+              <jobProperties/>
+              <triggers>
+                <string>hudson.triggers.SCMTrigger</string>
+              </triggers>
+              <parameters/>
+              <options/>
+            </org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction>
+            <org.jenkinsci.plugins.workflow.multibranch.JobPropertyTrackerAction plugin="workflow-multibranch@2.21">
+              <jobPropertyDescriptors>
+                <string>org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty</string>
+              </jobPropertyDescriptors>
+            </org.jenkinsci.plugins.workflow.multibranch.JobPropertyTrackerAction>
+          </actions>
+          <description></description>
+          <keepDependencies>false</keepDependencies>
+          <properties>
+            <hudson.plugins.jira.JiraProjectProperty plugin="jira@3.0.11"/>
+            <hudson.security.AuthorizationMatrixProperty>
+              <inheritanceStrategy class="org.jenkinsci.plugins.matrixauth.inheritance.InheritParentStrategy"/>
+            </hudson.security.AuthorizationMatrixProperty>
+            <hudson.plugins.buildblocker.BuildBlockerProperty plugin="build-blocker-plugin@1.7.3">
+              <useBuildBlocker>false</useBuildBlocker>
+              <blockLevel>GLOBAL</blockLevel>
+              <scanQueueFor>DISABLED</scanQueueFor>
+              <blockingJobs></blockingJobs>
+            </hudson.plugins.buildblocker.BuildBlockerProperty>
+            <com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty plugin="gitlab-plugin@1.5.13">
+              <gitLabConnection></gitLabConnection>
+            </com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty>
+            <hudson.model.ParametersDefinitionProperty>
+              <parameterDefinitions>
+                <hudson.model.StringParameterDefinition>
+                  <name>CLUSTER</name>
+                  <description>The name of kube cluster (prod/nonprod)</description>
+                  <defaultValue>nonprod</defaultValue>
+                  <trim>true</trim>
+                </hudson.model.StringParameterDefinition>
+                <hudson.model.StringParameterDefinition>
+                  <name>NAMESPACE</name>
+                  <description>The name of namespace</description>
+                  <defaultValue>default</defaultValue>
+                  <trim>true</trim>
+                </hudson.model.StringParameterDefinition>
+                <hudson.model.StringParameterDefinition>
+                  <name>PROJECT_NAME</name>
+                  <description>The name of application</description>
+                  <defaultValue></defaultValue>
+                  <trim>true</trim>
+                </hudson.model.StringParameterDefinition>
+                <hudson.model.StringParameterDefinition>
+                  <name>RELEASE</name>
+                  <description>The name of helm release. Default:PROJECT_NAME</description>
+                  <defaultValue></defaultValue>
+                  <trim>true</trim>
+                </hudson.model.StringParameterDefinition>
+              </parameterDefinitions>
+            </hudson.model.ParametersDefinitionProperty>
+          </properties>
+          <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.78">
+            <script>pipeline {
+            agent any
+            environment {
+                GIT_SSL_NO_VERIFY = &apos;true&apos;
+                TERRAFORM_VERSION = &apos;0.11.14&apos;
+            }
+            options {
+                timeout(time: 1, unit: &apos;HOURS&apos;)
+            }
+            stages {
+        
+                stage(&apos;git pull&apos;) {
+                    steps {
+                        withCredentials([string(credentialsId: &apos;gitlab-token&apos;, variable: &apos;GITLAB_API_TOKEN&apos;)]) {
+                            checkout poll:true, scm: [$class: &apos;GitSCM&apos;,
+                                branches: [[name: &apos;origin/jenkins-automation&apos;]],
+                                userRemoteConfigs: [[
+                                    url: &quot;https://oauth2:$GITLAB_API_TOKEN@gitlab.com/johnreed00/vehicle-trip-analyzer&quot;
+                                ]]
+                            ]
+                        }
+                    }
+                }
+                stage(&apos;rollout Project&apos;) {
+                    steps {
+                        sh &apos;bash helm/jenkins/files/jobs/rolloutProject.sh&apos;
+                    }
+                }
+            }
+        }
+        </script>
+            <sandbox>true</sandbox>
+          </definition>
+          <triggers/>
+          <disabled>false</disabled>
+        </flow-definition>
+
+    overwriteJobs: true
+    #authorizationStrategy: {}
+    JCasC:
+      enabled: true
+      defaultConfig: true
+      pluginVersion: "1.35"
+      configScripts:
+        global: |
+          jenkins:
+            labelString: "master"
+            securityRealm:
+              local:
+                allowsSignup: false
+                enableCaptcha: false
+                users:
+                - id: "admin"
+        gitlab-plugin: |
+          unclassified:
+            gitLabConnectionConfig:
+              connections:
+              - apiTokenId: "gitlab-token"
+                clientBuilderId: "autodetect"
+                connectionTimeout: 10
+                ignoreCertificateErrors: false
+                name: "gitlab"
+                readTimeout: 10
+                url: "https://gitlab.com/johnreed00/vehicle-trip-analyzer.git"
+          credentials:
+            system:
+              domainCredentials:
+              - credentials:
+                - gitLabApiTokenImpl:
+                    apiToken: {{ GITLAB_API_TOKEN }}
+                    description: "gitlab-api-token"
+                    id: "gitlab-api-token"
+                    scope: GLOBAL
+                - string:
+                    description: "gitlab-token"
+                    id: "gitlab-token"
+                    scope: GLOBAL
+                    secret: {{ GITLAB_API_TOKEN }}
+  
+        authorize-project: |
+          security:
+            queueItemAuthenticator:
+              authenticators:
+              - global:
+                  strategy: "triggeringUsersAuthorizationStrategy"
+        matrix-auth: |
+          jenkins:
+            authorizationStrategy:
+              projectMatrix:
+                permissions:
+                - "Overall/Read:authenticated"
+                - "Job/Read:authenticated"
+                - "View/Read:authenticated"
+                - "Overall/Administer:admin"
+    crumbIssuer: "strict"
+    sidecars:
+      configAutoReload:
+        enabled: false
+  
+    prometheus:
+      enabled: false
+
+    deploymentLabels:
+      app: jenkins
+    serviceLabels:
+      app: jenkins
+    podLabels:
+      app: jenkins
+      release: jenkins
+  
+  agent:
+    enabled: false
+  
+  persistence:
+    enabled: true
+    storageClass: local-path
+    size: 20Gi
+    annotations:
+      app: jenkins
+
+vehicle-trip-analyzer:
+  ingress:
+    enabled: true
+    hostName: vta.paraselenae.com
+    annotations:
+      certmanager.k8s.io/cluster-issuer: letsencrypt-prod
+      kubernetes.io/ingress.class: nginx
+      nginx.ingress.kubernetes.io/proxy-connect-timeout: "30s"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "20s"

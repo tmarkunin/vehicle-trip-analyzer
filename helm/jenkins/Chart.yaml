@@ -1,0 +1,16 @@
+apiVersion: v1
+description: cyberjohn00 jenkins meta port
+name: jenkins
+version: 1.0.0
+appVersion: "1.0.2"
+home: https://jenkins.default.svc.cluster.local
+maintainers:
+- name: cyberjohn00
+  email: cyberjohn00@gmail.com
+dependencies:
+- name: jenkins
+  repository: '@stable'
+  version: 1.9.16
+- name: vehicle-trip-analyzer
+  repository: "file://../vehicle-trip-analyzer"
+  version: 1.0.0

@@ -1,0 +1,4 @@
+flask
+flask-httpauth>=4.0.0
+pathlib
+requests>=2.23.0
