@@ -1,7 +1,7 @@
 #!/bin/bash
 
 help() {
-  echo "PROJECT_NAME=jenkins CLUSTER=nonprod NAMESPACE=default RELEASE=jenkins TEMPLATE=mycluster.yaml.j2 $0"
+  echo "PROJECT_NAME=jenkins CLUSTER=nonprod NAMESPACE=default RELEASE=jenkins APP_VERSION=1.0.0 TEMPLATE=<CLUSTER>.yaml.j2 $0"
 }
 
 errx() {
@@ -50,12 +50,14 @@ rollout() {
   OLDRELEASE=$(helm ls $RELEASE|grep -v NAME|awk '{print $1}')
   #RELEASE=$(helm ls $RELEASE|grep -v NAME|sed 's/.*DEPLOYED//g'|awk '{print $1}')
   action="upgrade $RELEASE ."
+  setvalues=""
+  [ ! -z "$APP_VERSION" ] && setvalues="--set image.tag=$APP_VERSION"
   if [ -z "$RELEASE" ]; then
     action="install --name $RELEASE ."
     INSTALL=1
   fi
   j2 --customize $BINDIR/j2-custom.py $TEMPLATE > $TEMPLATE_TMPFILE
-  helm $action -f $TEMPLATE_TMPFILE --namespace $NAMESPACE
+  helm $action -f $TEMPLATE_TMPFILE --namespace $NAMESPACE $setvalues
 }
 
 rollback() {
