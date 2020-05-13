@@ -30,8 +30,26 @@ resources:
     cpu: 200m
     memory: 200Mi
 
-livenessProbe: {}
-readinessProbe: {}
+livenessProbe:
+  httpGet:
+    path: /
+    port: 80
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 3
+  successThreshold: 1
+  failureThreshold: 10
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: 80
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 3
+  successThreshold: 1
+  failureThreshold: 10
+
 nodeSelector: {}
 
 tolerations: []
