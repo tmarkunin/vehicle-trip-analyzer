@@ -1,0 +1,142 @@
+jenkins:
+  nameOverride: jenkins
+  fullnameOverride: jenkins
+  master:
+    numExecutors: 10
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    javaOpts: "-Dorg.apache.commons.jelly.tags.fmt.timeZone=Europe/Moscow"
+    jenkinsAdminEmail: "jenkins@localhost"
+    ingress:
+      enabled: true
+      labels:
+        app: jenkins
+      apiVersion: "extensions/v1beta1"
+      annotations:
+        certmanager.k8s.io/cluster-issuer: letsencrypt-prod
+        kubernetes.io/ingress.class: nginx
+        nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  
+      hostName: jenkins.paraselenae.com
+      tls:
+        - secretName: jenkins-tls
+          hosts:
+            - jenkins.paraselenae.com
+      #path: "/jenkins"
+    cli: true
+    adminPassword: {{ JENKINS_ADMIN_PASSWORD }}
+    installPlugins:
+      - kubernetes
+      - configuration-as-code
+      - workflow-multibranch-defaults
+      - jira
+      - build-blocker-plugin
+      - gitlab-plugin
+      - workflow-aggregator
+      - matrix-auth
+      - authorize-project
+      - durable-task
+      - folder-auth
+      - folder-properties
+      - strict-crumb-issuer
+
+    overwritePlugins: true
+    jobs:
+      rolloutProject: |-
+{% filter indent(width=12) %}
+{% include "files/jobs/rolloutProject.job" %}
+{% endfilter %}
+
+    overwriteJobs: true
+    #authorizationStrategy: {}
+    JCasC:
+      enabled: true
+      defaultConfig: true
+      pluginVersion: "1.35"
+      configScripts:
+        global: |
+          jenkins:
+            labelString: "master"
+            securityRealm:
+              local:
+                allowsSignup: false
+                enableCaptcha: false
+                users:
+                - id: "admin"
+        gitlab-plugin: |
+          unclassified:
+            gitLabConnectionConfig:
+              connections:
+              - apiTokenId: "gitlab-token"
+                clientBuilderId: "autodetect"
+                connectionTimeout: 10
+                ignoreCertificateErrors: false
+                name: "gitlab"
+                readTimeout: 10
+                url: "https://gitlab.com/johnreed00/vehicle-trip-analyzer.git"
+          credentials:
+            system:
+              domainCredentials:
+              - credentials:
+                - gitLabApiTokenImpl:
+                    apiToken: {{ GITLAB_API_TOKEN }}
+                    description: "gitlab-api-token"
+                    id: "gitlab-api-token"
+                    scope: GLOBAL
+                - string:
+                    description: "gitlab-token"
+                    id: "gitlab-token"
+                    scope: GLOBAL
+                    secret: {{ GITLAB_API_TOKEN }}
+  
+        authorize-project: |
+          security:
+            queueItemAuthenticator:
+              authenticators:
+              - global:
+                  strategy: "triggeringUsersAuthorizationStrategy"
+        matrix-auth: |
+          jenkins:
+            authorizationStrategy:
+              projectMatrix:
+                permissions:
+                - "Overall/Read:authenticated"
+                - "Job/Read:authenticated"
+                - "View/Read:authenticated"
+                - "Overall/Administer:admin"
+    crumbIssuer: "strict"
+    sidecars:
+      configAutoReload:
+        enabled: false
+  
+    prometheus:
+      enabled: false
+
+    deploymentLabels:
+      app: jenkins
+    serviceLabels:
+      app: jenkins
+    podLabels:
+      app: jenkins
+      release: jenkins
+  
+  agent:
+    enabled: false
+  
+  persistence:
+    enabled: true
+    storageClass: local-path
+    size: 20Gi
+    annotations:
+      app: jenkins
+
+vehicle-trip-analyzer:
+  ingress:
+    enabled: true
+    hostName: vta.paraselenae.com
+    annotations:
+      certmanager.k8s.io/cluster-issuer: letsencrypt-prod
+      kubernetes.io/ingress.class: nginx
+      nginx.ingress.kubernetes.io/proxy-connect-timeout: "30s"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "20s"
