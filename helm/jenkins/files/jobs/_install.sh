@@ -6,7 +6,7 @@ _clean_install() {
 }
 
 _init_install() {
-  export TERRAFORM_VERSION=0.11.14
+  export TERRAFORM_VERSION=0.12.25
   export HELM_VERSION=2.13.1
   DIR=$(pwd)
   export PATH=$PATH:/usr/local/bin

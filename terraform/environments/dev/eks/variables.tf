@@ -1,0 +1,10 @@
+variable "map_roles" {}
+variable "worker_instance_type" {}
+variable "asg_desired_capacity" {}
+variable "asg_max_size" {}
+variable "asg_min_size" {}
+variable "worker_root_volume_size" {}
+variable "application_name" {}
+variable "namespace_list" {}
+variable "cluster_version" {}
+variable "allowed_chars" {}

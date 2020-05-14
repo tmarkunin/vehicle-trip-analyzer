@@ -21,12 +21,15 @@
 ```
 
 ## Up and running
+### Deploy EKS using terraform
+See configuration and modules examples to deploy EKS at `terraform` directory.
+
 ### Create docker image
 ```bash
-# cd docker
-# docker login
-# docker build -t cyberjohn00/vehicle-trip-analyzer:1.0.0 .
-# docker push cyberjohn00/vehicle-trip-analyzer:1.0.0
+$ cd docker
+$ docker login
+$ docker build -t cyberjohn00/vehicle-trip-analyzer:1.0.0 .
+$ docker push cyberjohn00/vehicle-trip-analyzer:1.0.0
 ```
 ### Deploy application in your namespace
 ```bash
