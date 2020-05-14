@@ -21,6 +21,9 @@
 ```
 
 ## Up and running
+### Deploy EKS using terraform
+See configuration and modules examples to deploy EKS at `terraform` directory.
+
 ### Create docker image
 ```bash
 $ cd docker
